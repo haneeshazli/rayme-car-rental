@@ -105,6 +105,31 @@ consolidate there.
 Both links, and the current hash, are printed by `python3 build/build.py` and
 written to `SHARE-LINK.txt`.
 
+## Web analytics
+
+`build.py` injects Vercel Web Analytics into the `<head>` — the plain-HTML
+snippet, so there is no package to install and no build step to run:
+
+```html
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+```
+
+The script is served by Vercel's Edge Network from the site's own origin, so it
+is first-party and gets past the tracker blocking that stops third-party
+analytics. Nothing is collected until **Web Analytics is switched on for the
+project** in the Vercel dashboard (Project → Analytics → Enable); the snippet
+alone does not turn it on.
+
+On GitHub Pages and on a local preview that one request simply 404s and the
+page is unaffected — those visits are not counted. Pageviews are recorded on
+load, which covers the whole site: it is a single page, so the SPA route
+tracking the plain-HTML snippet lacks costs nothing.
+
+The queue shim on the first line is what buffers a `va()` call made before the
+script has loaded, and it is also the hook for custom events — a WhatsApp
+booking click, say — if those are wanted later.
+
 ## Deployments
 
 Both hosts serve `public/`:

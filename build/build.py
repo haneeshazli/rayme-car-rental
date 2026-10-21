@@ -197,6 +197,21 @@ ld = {
 def esc(t):
     return t.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;")
 
+# ---------------------------------------------------------------- analytics
+# Vercel Web Analytics, the plain-HTML form: no package, no build step. The
+# script is served by the Edge Network from the site's own origin, so it is
+# first-party and survives tracker blocking that kills third-party analytics.
+# It only exists on a Vercel deployment - opening public/index.html from disk,
+# or hosting it anywhere else, just 404s that one request and the page is
+# unaffected. The queue shim has to come first so a va() call made before the
+# script finishes loading is buffered instead of thrown away; it is also what
+# custom events would use later. Pageviews are counted on load, and the site
+# is a single page, so the missing SPA route support costs nothing here.
+ANALYTICS = """
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+"""
+
 inject = """
 <meta name="description" content="{desc}">
 <link rel="canonical" href="{url}/">
@@ -227,6 +242,7 @@ inject = """
 
 <script type="application/ld+json">{ld}</script>
 <script>window.__resources = {res};</script>
+{analytics}
 """.format(
     desc=esc(DESCRIPTION),
     title=esc(TITLE),
@@ -234,6 +250,7 @@ inject = """
     card=SHARE_CARD,
     ld=json.dumps(ld, separators=(",", ":")).replace("</", "<\\/"),
     res=json.dumps(resource_map).replace("</", "<\\/"),
+    analytics=ANALYTICS.strip(),
 )
 
 # Inject after the charset/viewport metas, not straight after <head>. The
